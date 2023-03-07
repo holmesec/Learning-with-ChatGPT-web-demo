@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat{% endblock %}
+
+{% block content %}
+<div class="max-w-min mx-auto">
+<p>Question:</p>
+<textarea class="text-black w-96 h-16 block" type="text" id="question"></textarea>
+<button class="float-right p-2 mt-2 bg-green-700 rounded-sm" onclick="query()">Submit</button>
+<p class="mt-12">Answer:</p>
+<textarea class="text-black w-96 h-16" id="answer" readonly></textarea>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    let file_id = '{{file_id}}'
+    question_elm = document.getElementById('question')
+    answer_elm = document.getElementById('answer')
+    function query(){
+        answer_elm.innerText = 'Loading...'
+        question = question_elm.value
+        fetch('/api/query', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({'question':question, 'file_id':file_id})}).then(res=>res.json()).then(res=>answer_elm.innerText=res.answer)
+    }
+</script>
+{% endblock %}

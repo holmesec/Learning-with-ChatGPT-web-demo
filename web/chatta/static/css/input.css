@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@responsive {
+    .text-stroke {
+      -webkit-text-stroke: 1px black;
+    }
+  }

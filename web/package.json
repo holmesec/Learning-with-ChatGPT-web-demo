@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "dev": "tailwindcss -i chatta/static/css/input.css -o chatta/static/css/style.css -w",
+    "prod": "tailwindcss -i chatta/static/css/input.css -o chatta/static/css/style.css -m"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.2.7"
+  }
+}
