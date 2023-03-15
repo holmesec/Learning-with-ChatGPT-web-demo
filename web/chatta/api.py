@@ -23,10 +23,10 @@ def query():
     file_path = os.path.join(UPLOAD_FOLDER, f'{file_id}.pdf')
 
     pdf = pdfium.PdfDocument(file_path)
-    page = pdf[0]
-    textpage = page.get_textpage()
-    text_all = textpage.get_text_range()
-    text_all = " ".join(text_all.splitlines())
+    text_all = ""
+    for page in pdf:
+        textpage = page.get_textpage()
+        text_all += " ".join(textpage.get_text_range().splitlines())
     text_segments = list(filter(None, text_all.split('.')))
     docs = DocumentArray(Document(text = s) for s in text_segments)
     docs.apply(lambda doc: doc.embed_feature_hashing())
