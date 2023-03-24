@@ -1,11 +1,9 @@
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, current_app
+import openai
 import os
-
 import pypdfium2 as pdfium
 from docarray import Document, DocumentArray
 from transformers import pipeline
-
-UPLOAD_FOLDER = 'chatta/uploads'
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -20,7 +18,7 @@ def query():
 
     question = data['question']
     file_id = data['file_id']
-    file_path = os.path.join(UPLOAD_FOLDER, f'{file_id}.pdf')
+    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f'{file_id}.pdf')
 
     pdf = pdfium.PdfDocument(file_path)
     text_all = ""
@@ -30,7 +28,16 @@ def query():
     text_segments = list(filter(None, text_all.split('.')))
     docs = DocumentArray(Document(text = s) for s in text_segments)
     docs.apply(lambda doc: doc.embed_feature_hashing())
-    query = (Document(text=question).embed_feature_hashing().match(docs, limit=5, exclude_self=True, metric="jaccard", use_scipy=True))
-    oracle = pipeline(model="deepset/roberta-base-squad2")
-    answer = oracle(question=question, context=" ".join(query.matches[:,['text']]))
-    return jsonify(answer)
+    query = (Document(text=question).embed_feature_hashing().match(docs, limit=50, exclude_self=True, metric="jaccard", use_scipy=True))
+
+    openai.api_key = current_app.config['OPENAI_API_KEY']
+    completion = openai.ChatCompletion.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {"role": "user", "content": f'Act as a teacher. A student ask the following question: {question}. Use the following context to answer the question: {" ".join(query.matches[:,["text"]])}'}
+    ]
+    )
+
+    answer=completion.choices[0].message.content
+
+    return jsonify({'answer':answer})

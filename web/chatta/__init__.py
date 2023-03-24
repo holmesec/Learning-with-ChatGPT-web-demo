@@ -1,13 +1,19 @@
 from flask import Flask, render_template, request, redirect
 import os
 import uuid
+from dotenv import load_dotenv
 
-def create_app(test_config=None):
+load_dotenv()
+
+UPLOAD_FOLDER = 'chatta/uploads'
+
+def create_app():
 	from chatta import api
 
-	UPLOAD_FOLDER = 'chatta/uploads'
+	app = Flask(__name__)
 
-	app = Flask(__name__, instance_relative_config=True)
+	app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+	app.config['OPENAI_API_KEY'] = os.getenv('OPENAI_API_KEY')
 
 	app.register_blueprint(api.bp)
 
@@ -30,12 +36,12 @@ def create_app(test_config=None):
 			return 'File type not allowed', 400
 		
 		file_id = uuid.uuid4().hex
-		file.save(os.path.join(UPLOAD_FOLDER, f'{file_id}.pdf'))
+		file.save(os.path.join(app.config['UPLOAD_FOLDER'], f'{file_id}.pdf'))
 		return redirect(f'/chat/{file_id}')
 
 	@app.route("/chat/<file_id>")
 	def chat(file_id):
-		file_path = os.path.join(UPLOAD_FOLDER, f'{file_id}.pdf')
+		file_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{file_id}.pdf')
 		if not os.path.isfile(file_path):
 			return redirect('/')
 		
