@@ -1,43 +1,88 @@
-from flask import Blueprint, render_template, request, jsonify, current_app
-import openai
+from flask import Blueprint, request, jsonify, current_app
 import os
-import pypdfium2 as pdfium
-from docarray import Document, DocumentArray
-from transformers import pipeline
+import uuid
+import random
+import pandas as pd
+import time
+import pickle
+from chatta.ab_test.utils import get_ab_len_df, saves_ab_len_folder
 
 bp = Blueprint('api', __name__, url_prefix='/api')
+
+ab_len_test_queue = {}
+df_ab_len = get_ab_len_df()
 
 
 @bp.route('/query', methods=["POST"])
 def query():
-    data = request.get_json()
-    if not "question" in data:
-        return "question missing", 400
-    if not "file_id" in data:
-        return "file_id missing",  400
+    return jsonify({'answer': '42'})
 
-    question = data['question']
-    file_id = data['file_id']
-    file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], f'{file_id}.pdf')
 
-    pdf = pdfium.PdfDocument(file_path)
-    text_all = ""
-    for page in pdf:
-        textpage = page.get_textpage()
-        text_all += " ".join(textpage.get_text_range().splitlines())
-    text_segments = list(filter(None, text_all.split('.')))
-    docs = DocumentArray(Document(text = s) for s in text_segments)
-    docs.apply(lambda doc: doc.embed_feature_hashing())
-    query = (Document(text=question).embed_feature_hashing().match(docs, limit=50, exclude_self=True, metric="jaccard", use_scipy=True))
+@bp.route('/ab-test/contex-length/submit', methods=["POST"])
+def ab_test_len_label():
+    try:
+        data = request.get_json()
+        id = data['id']
+        choice = data['choice']
 
-    openai.api_key = current_app.config['OPENAI_API_KEY']
-    completion = openai.ChatCompletion.create(
-    model="gpt-3.5-turbo",
-    messages=[
-        {"role": "user", "content": f'Act as a teacher. A student ask the following question: {question}. Use the following context to answer the question: {" ".join(query.matches[:,["text"]])}'}
-    ]
-    )
+        order = ab_len_test_queue[id]['order']
+        row_index = ab_len_test_queue[id]['row_index']
 
-    answer=completion.choices[0].message.content
+        label_list = ['short', 'medium', 'long'] if order == 0 else [
+            'medium', 'long', 'short'] if order == 1 else ['long', 'short', 'medium']
 
-    return jsonify({'answer':answer})
+        choice_label = label_list[choice]
+
+        df_ab_len.loc[row_index, 'choice'] = choice_label
+
+        n_labelled = len(df_ab_len[~df_ab_len["choice"].isna()])
+
+        if n_labelled > 0 and n_labelled % 10 == 0:
+            with open(os.path.join(saves_ab_len_folder, f'{n_labelled}.pkl'), 'wb') as f:
+                f.write(pickle.dumps(df_ab_len))
+
+        if len(df_ab_len[df_ab_len["choice"].isna()]) == 0:
+            with open(os.path.join(saves_ab_len_folder, f'final.pkl'), 'wb') as f:
+                f.write(pickle.dumps(df_ab_len))
+
+        return jsonify({'success': True})
+
+    except:
+        return jsonify({'success': False})
+
+
+@bp.route('/ab-test/contex-length/fetch', methods=["GET"])
+def ab_test_ctx_fetch():
+
+    # free sample if it has not been labelled 10 min after it was fetched
+    df_ab_len.loc[(df_ab_len['choice'].isna()) & (df_ab_len['fetched'] == True) & (
+        int(time.time()) - df_ab_len['fetched_time'] > 10*60), 'fetched'] = False
+
+    if len(df_ab_len[df_ab_len['fetched'] == False]) == 0:
+        n_unlabelled = len(df_ab_len[df_ab_len["choice"].isna()])
+        if n_unlabelled > 0:
+            return jsonify({'msg': f'No more data to fetch, but there\'s still {n_unlabelled}unlabelled data-points'})
+        else:
+            return jsonify({'msg': f'No more data to label!'})
+
+    row = df_ab_len[df_ab_len['fetched'] == False].sample()
+    row_index = row.index
+    row = row.squeeze()
+
+    question = row['question']
+    answer_short = row['answer_short']
+    answer_medium = row['answer_medium']
+    answer_long = row['answer_long']
+
+    df_ab_len.loc[row_index, 'fetched'] = True
+    df_ab_len.loc[row_index, 'fetched_time'] = int(time.time())
+
+    order = random.randint(0, 2)
+    id = uuid.uuid4().hex
+    ab_len_test_queue[id] = {'order': order, 'row_index': row_index}
+
+    answer_a = answer_short if order == 0 else answer_medium if order == 1 else answer_long
+    answer_b = answer_medium if order == 0 else answer_long if order == 1 else answer_short
+    answer_c = answer_long if order == 0 else answer_short if order == 1 else answer_medium
+
+    return jsonify({'id': id, 'question': question, 'answer_a': answer_a, 'answer_b': answer_b, 'answer_c': answer_c})
