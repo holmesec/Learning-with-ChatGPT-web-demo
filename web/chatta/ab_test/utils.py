@@ -7,7 +7,7 @@ saves_ab_len_folder = './chatta/ab_test/context_length/saves/'
 
 def get_ab_len_df():
     saves_ab_len_file_names = [os.path.join(
-        saves_ab_len_folder, name) for name in os.listdir(saves_ab_len_folder)]
+        saves_ab_len_folder, name) for name in os.listdir(saves_ab_len_folder) if name != '.gitkeep']
 
     # use latest save if any
     if saves_ab_len_file_names:
