@@ -1,71 +1,66 @@
-
-{% extends 'base.html' %}
-
-{% block title %}Home{% endblock %}
-
-{% block content %}
-    <h1
-    class="p-6 mb-4 max-w-max mx-auto text-8xl italic text-stroke"
-    >
-    ChatTA
-    </h1>
-    <p class="text-lg my-4 text-center">Welcome to ChatTA!<br>Upload a PDF document bellow to start getting all your questions answered.</p>
-    <form
+{% extends 'base.html' %} {% block title %}Home{% endblock %} {% block content
+%}
+<div class="max-w-max mx-auto">
+  <h1 class="p-6 mb-4 max-w-max mx-auto text-8xl italic text-stroke">ChatTA</h1>
+  <p class="text-lg my-4 text-center">
+    Welcome to ChatTA!<br />Upload a PDF document bellow to start getting all
+    your questions answered.
+  </p>
+  <form
     id="form"
     class="bg-secondary rounded-lg shadow-md text-center p-8 mb-6 border border-gray-600"
     method="post"
     enctype="multipart/form-data"
     action="/upload"
-    >
+  >
     <div
-        class="transition rounded-lg border-dashed border-2 border-gray-400 bg-transparent p-6 mb-4 text-center"
-        id="drop_zone"
-        ondrop="this.classList.toggle('scale-105');dropHandler(event);"
-        ondragover="dragOverHandler(event);"
-        ondragenter="this.classList.toggle('scale-105')"
-        ondragleave="this.classList.toggle('scale-105')"
+      class="transition rounded-lg border-dashed border-2 border-gray-400 bg-transparent p-6 mb-4 text-center"
+      id="drop_zone"
+      ondrop="this.classList.toggle('scale-105');dropHandler(event);"
+      ondragover="dragOverHandler(event);"
+      ondragenter="this.classList.toggle('scale-105')"
+      ondragleave="this.classList.toggle('scale-105')"
     >
-        <p class="text-xl">
+      <p class="text-xl">
         Drag and drop PDF<br /><span class="italic">or</span>
-        </p>
-        <input
+      </p>
+      <input
         id="file_input"
         name="pdf"
         type="file"
         accept="application/pdf"
         required
-        />
+      />
     </div>
     <input
-        type="submit"
-        value="upload"
-        class="bg-green-700 text-white px-4 py-2 rounded-md mx-auto hover:cursor-pointer"
+      type="submit"
+      value="upload"
+      class="bg-green-700 text-white px-4 py-2 rounded-md mx-auto hover:cursor-pointer"
     />
-    </form>
-{% endblock %}
+  </form>
+</div>
+{% endblock %} {% block script %}
+<script>
+  function dropHandler(ev) {
+    ev.preventDefault();
 
-{% block script %}
-    <script>
-      function dropHandler(ev) {
-        ev.preventDefault();
-
-        let file;
-        if (ev.dataTransfer.items) {
-          // Only consider first file
-          let item = ev.dataTransfer.items[0];
-          if (item.kind === "file") {
-            file = item.getAsFile();
-          }
-        } else {
-          file = ev.dataTransfer.files[0];
-        }
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        document.getElementById("file_input").files = dataTransfer.files;
+    let file;
+    if (ev.dataTransfer.items) {
+      // Only consider first file
+      let item = ev.dataTransfer.items[0];
+      if (item.kind === "file") {
+        file = item.getAsFile();
       }
+    } else {
+      file = ev.dataTransfer.files[0];
+    }
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(file);
+    document.getElementById("file_input").files = dataTransfer.files;
+  }
 
-      function dragOverHandler(ev) {
-        ev.preventDefault();
-      }
-    </script>
+  function dragOverHandler(ev) {
+    ev.preventDefault();
+  }
+</script>
 {% endblock %}

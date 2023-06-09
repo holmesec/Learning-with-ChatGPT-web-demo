@@ -1,0 +1,104 @@
+{% extends 'base.html' %} {% block title %}Chat{% endblock %} {% block content
+%}
+<div class="max-w-max mx-auto">
+  <h1 class="text-3xl mb-5 text-center">Select the best answer</h1>
+  <div id="loader" class="flex items-center justify-center">
+    <svg
+      class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        class="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        stroke-width="4"
+      ></circle>
+      <path
+        class="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
+    <h1 class="text-2xl">Loading...</h1>
+  </div>
+  <div id="ab_test_content" class="hidden">
+    <p class="text-center">
+      <span class="font-bold">Question: </span> <span id="question"></span>
+    </p>
+    <div class="grid grid-cols-3 divide-x mt-5">
+      <div class="pr-4">
+        <p class="text-2xl mb-2">Answer A:</p>
+        <p id="answer_a"></p>
+      </div>
+      <div class="px-4">
+        <p class="text-2xl mb-2">Answer B:</p>
+        <p id="answer_b"></p>
+      </div>
+      <div class="pl-4">
+        <p class="text-2xl mb-2">Answer C:</p>
+        <p id="answer_c"></p>
+      </div>
+    </div>
+    <div class="grid grid-cols-3 place-items-center mt-5">
+      {% for i in range(3) %}
+      <div>
+        <button
+          class="bg-green-700 text-white px-4 py-2 rounded-md mx-auto hover:cursor-pointer"
+          onclick="submit_answer({{i}})"
+        >
+          Select {{['A','B','C'][i]}}
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %} {% block script %}
+<script>
+  let id;
+  loader_elm = document.getElementById("loader");
+  ab_test_content_elm = document.getElementById("ab_test_content");
+  question_elm = document.getElementById("question");
+  answer_a_elm = document.getElementById("answer_a");
+  answer_b_elm = document.getElementById("answer_b");
+  answer_c_elm = document.getElementById("answer_c");
+  function fetch_data() {
+    fetch("/api/ab-test/contex-length/fetch")
+      .then((res) => res.json())
+      .then((res) => {
+        if ("msg" in res) {
+          alert(res["msg"]);
+        } else {
+          question_elm.innerText = res["question"];
+          answer_a_elm.innerText = res["answer_a"];
+          answer_b_elm.innerText = res["answer_b"];
+          answer_c_elm.innerText = res["answer_c"];
+          id = res["id"];
+          ab_test_content_elm.classList.toggle("hidden");
+          loader_elm.classList.toggle("hidden");
+        }
+      });
+  }
+  function submit_answer(choice) {
+    fetch("/api/ab-test/contex-length/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: id, choice: choice }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        if (res["success"] == true) {
+          ab_test_content_elm.classList.toggle("hidden");
+          loader_elm.classList.toggle("hidden");
+          fetch_data();
+        }
+      });
+  }
+
+  fetch_data();
+</script>
+{% endblock %}

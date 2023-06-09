@@ -1,0 +1,50 @@
+{% extends 'base.html' %} {% block title %}Chat{% endblock %} {% block content
+%}
+<div class="max-w-max mx-auto">
+  <h1 class="text-3xl mb-5">Select the best answer</h1>
+  <p><span class="font-bold">Question: </span> {{question}}</p>
+  <div class="grid grid-cols-2 divide-x mt-5">
+    <div class="pr-4">
+      <p class="text-2xl mb-2">Answer A:</p>
+      <p>{{answer_a}}</p>
+    </div>
+    <div class="pl-4">
+      <p class="text-2xl mb-2">Answer B:</p>
+      <p>{{answer_b}}</p>
+    </div>
+  </div>
+  <div class="grid grid-cols-2 place-items-center mt-5">
+    <div>
+      <button
+        class="bg-green-700 text-white px-4 py-2 rounded-md mx-auto hover:cursor-pointer"
+      >
+        Select
+      </button>
+    </div>
+    <div>
+      <button
+        class="bg-green-700 text-white px-4 py-2 rounded-md mx-auto hover:cursor-pointer"
+      >
+        Select
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block script %}
+<script>
+  let file_id = "{{file_id}}";
+  question_elm = document.getElementById("question");
+  answer_elm = document.getElementById("answer");
+  function query() {
+    answer_elm.innerText = "Loading...";
+    question = question_elm.value;
+    fetch("/api/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: question, file_id: file_id }),
+    })
+      .then((res) => res.json())
+      .then((res) => (answer_elm.innerText = res.answer));
+  }
+</script>
+{% endblock %}
