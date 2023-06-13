@@ -58,15 +58,16 @@ class BoW():
         vectorizer = CountVectorizer()  # new vectorizer to avoid changing the old one
 
         ctx = " ".join([word.lower() for word in word_tokenize(ctx) if word.lower() not in stop])
-        ctx_bog = vectorizer.fit_transform([ctx]).toarray()
+        ctx_bow = vectorizer.fit_transform([ctx]).toarray()
 
         query = " ".join([word.lower() for word in word_tokenize(query) if word.lower() not in stop])
         try:
-            query_bog = vectorizer.transform([query]).toarray()
+            query_bow = vectorizer.transform([query]).toarray()
         except ValueError:
             print("ValueError: empty vocabulary; perhaps the documents only contain stop words")
             return 0
 
+        return ctx_bow[0] @ query_bow[0]
         # Using cache (not working)
         # Look up query and ctx in cache
         # if ctx in self.cache:
@@ -90,5 +91,4 @@ class BoW():
         #         self.cache[query] = None
         #         return 0
 
-        return ctx_bog[0] @ query_bog[0]
 
