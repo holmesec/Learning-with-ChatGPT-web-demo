@@ -67,7 +67,7 @@
   answer_b_elm = document.getElementById("answer_b");
   answer_c_elm = document.getElementById("answer_c");
   function fetch_data() {
-    fetch("/api/ab-test/contex-length/fetch")
+    fetch("/api/ab-test/context-length/fetch")
       .then((res) => res.json())
       .then((res) => {
         if ("msg" in res) {
@@ -84,7 +84,7 @@
       });
   }
   function submit_answer(choice) {
-    fetch("/api/ab-test/contex-length/submit", {
+    fetch("/api/ab-test/context-length/submit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: id, choice: choice }),

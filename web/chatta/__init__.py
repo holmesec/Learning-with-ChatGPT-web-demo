@@ -48,4 +48,10 @@ def create_app():
     def ab_test_ctx_length():
         return render_template("ab_test_len.html")
 
+    @app.route("/ab-test/context/<name>")
+    def ab_test_ctx(name):
+        if name not in ['2450', 'history']:
+            return "A/B test not found!", 404
+        return render_template("ab_test_ctx.html", name=name)
+
     return app
