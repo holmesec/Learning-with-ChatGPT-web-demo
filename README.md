@@ -12,6 +12,7 @@ This repository contains the code for running and testing the pipeline produced 
 
 The code for a website that provides an interface for interacting with the pipeline can be found under the `web/` folder. To run the code you should follow the following steps:
 **Installation:**
+Add a `.env` file with your OpenAI API key. See `.env.example`.
 
 ```bash
 cd web
