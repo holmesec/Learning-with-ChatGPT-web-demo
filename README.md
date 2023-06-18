@@ -1,8 +1,29 @@
-# Learning with ChatGPT I
- 02466 Project work
+# Learning with ChatGPT I - 02466 Project work
 
-In this repository can be found our development files for making and testing the pipeline, models, and calculating results. The second main folder is for the website where the two A/B test took place.
+This repository contains the code for running and testing the pipeline produced for our work with the project "Learning with ChatGPT I". The repository also contains the code for a website developed as an interface for interacting with the piple and facilitating two A/B tests descripted in the report for the project.
 
-In the development folder is notebooks such that q_w_chat.ipynb and result_generation.ipynb under Neural Search may be of particular interest as we here make the data set while also send requests to ChatGPT for questions, and create embeddings for the data, train IR models and make the ROC curves respectively. Small mentioning can also go to voting_result_generation.ipynb for creating the voting ROC curve and book_visuals.ipynb for visualizing where the IR model found a context in the books.
+### Files of interest
 
-As for the web...
+- `dev/pipeline.ipynb` Main file for running the pipeline developed for the project
+- `dev/neural_search/result_generation.ipynb` Main file for generating NS results
+- `dev/neural_search/q_w_chat.ipynb` Main file for interacting with ChatGPT for generating datasets
+
+## Web
+
+The code for a website that provides an interface for interacting with the pipeline can be found under the `web/` folder. To run the code you should follow the following steps:
+**Installation:**
+
+```bash
+cd web
+python -m venv .venv
+source ./.venv/bin/activate #Windows: ./.venv/Scripts/Activate.ps1
+pip install -r requirements.txt
+yarn
+```
+
+**Running the flask app (development server):**
+
+```bash
+cd web
+flask -A chatta run
+```
