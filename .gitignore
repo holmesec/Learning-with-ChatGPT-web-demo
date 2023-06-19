@@ -6,4 +6,7 @@ venv/
 node_modules/
 __pycache__/
 
-web/chatta/uploads/
+web/chatta/uploads/pdf/*
+!web/chatta/uploads/pdf/.gitkeep
+web/chatta/uploads/embeddings/*
+!web/chatta/uploads/embeddings/.gitkeep
