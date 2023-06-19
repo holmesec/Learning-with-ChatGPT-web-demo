@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, redirect
 import os
-import uuid
-
-UPLOAD_FOLDER = 'chatta/uploads'
+from hashlib import sha256
+import threading
+from chatta.utils import process_pdf, UPLOAD_FOLDER
 
 
 def create_app():
@@ -32,17 +32,29 @@ def create_app():
         if file.filename.rsplit('.', 1)[1].lower() != 'pdf':
             return 'File type not allowed', 400
 
-        file_id = uuid.uuid4().hex
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], f'{file_id}.pdf'))
-        return redirect(f'/chat/{file_id}')
+        id = sha256(file.read()).hexdigest()
+        file.seek(0)
 
-    @app.route("/chat/<file_id>")
-    def chat(file_id):
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], f'{file_id}.pdf')
-        if not os.path.isfile(file_path):
+        embeddings_path = os.path.join(
+            app.config['UPLOAD_FOLDER'], 'embeddings', f'{id}.pkl')
+
+        # Check if embeddings already exists for the provided PDF
+        if not os.path.isfile(embeddings_path):
+            file.save(os.path.join(
+                app.config['UPLOAD_FOLDER'], 'pdf', f'{id}.pdf'))
+            thread = threading.Thread(
+                target=process_pdf, kwargs={'id': id})
+            thread.start()
+
+        return redirect(f'/chat/{id}')
+
+    @app.route("/chat/<id>")
+    def chat(id):
+        pdf_path = os.path.join(
+            app.config['UPLOAD_FOLDER'], 'pdf', f'{id}.pdf')
+        if not os.path.isfile(pdf_path):
             return redirect('/')
-
-        return render_template("chat.html", file_id=file_id)
+        return render_template("chat.html", id=id)
 
     @app.route("/ab-test/context-length")
     def ab_test_ctx_length():

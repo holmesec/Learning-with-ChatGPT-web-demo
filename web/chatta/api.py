@@ -1,11 +1,18 @@
+from dotenv import load_dotenv
 from flask import Blueprint, request, jsonify, current_app
 import os
 import uuid
 import random
-import pandas as pd
+import numpy as np
 import time
 import pickle
+import openai
 from chatta.ab_test.utils import get_ab_df, saves_ab_len_folder, saves_ab_ctx_2450_folder, saves_ab_ctx_history_folder
+from chatta.utils import get_progress
+from sentence_transformers import SentenceTransformer
+embedding_model = SentenceTransformer(
+    'sentence-transformers/multi-qa-mpnet-base-dot-v1')
+load_dotenv()
 
 bp = Blueprint('api', __name__, url_prefix='/api')
 
@@ -19,9 +26,64 @@ ab_ctx_history_queue = {}
 df_ab_ctx_history = get_ab_df(saves_ab_ctx_history_folder)
 
 
+@bp.route('/status/<id>', methods=["GET"])
+def get_status(id):
+    embeddings_path = os.path.join(
+        current_app.config['UPLOAD_FOLDER'], 'embeddings', f'{id}.pkl')
+    ready = os.path.isfile(embeddings_path)
+    if not ready:
+        progress = get_progress(id)
+        if not progress:
+            return jsonify({'error': 'unknown id!'})
+        else:
+            return jsonify({'is_ready': ready, 'progress': progress})
+
+    return jsonify({'is_ready': ready})
+
+
 @bp.route('/query', methods=["POST"])
 def query():
-    return jsonify({'answer': '42'})
+    data = request.get_json()
+    if not "question" in data:
+        return "question missing", 400
+    if not "id" in data:
+        return "id missing",  400
+
+    question = data['question']
+    id = data['id']
+    file_path = os.path.join(
+        current_app.config['UPLOAD_FOLDER'], 'embeddings', f'{id}.pkl')
+
+    if not os.path.isfile(file_path):
+        return jsonify({'error': 'unknown id!'})
+
+    embedded_question = embedding_model.encode(question)
+
+    with open(file_path, 'rb') as f:
+        context_to_embedding = pickle.loads(f.read())
+
+    best_context = next(iter(context_to_embedding))
+    best_score = np.dot(embedded_question, context_to_embedding[best_context])
+
+    for c, e in context_to_embedding.items():
+        score = np.dot(embedded_question, e)
+        if score > best_score:
+            best_context = c
+            best_score = score
+
+    openai.api_key = os.environ.get('OPENAI_API_KEY')
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        temperature=0,
+        messages=[
+            {"role": "user",
+             "content": f'Act as a teacher. A student ask the following question: {question}. Use the following context to answer the question: ```{best_context}```'}
+        ]
+    )
+
+    answer = completion.choices[0].message.content
+
+    return jsonify({'answer': answer, 'context': best_context})
 
 
 @bp.route('/ab-test/context-length/fetch', methods=["GET"])

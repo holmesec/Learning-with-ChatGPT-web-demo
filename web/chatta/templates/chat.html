@@ -1,26 +1,112 @@
-{% extends 'base.html' %}
-
-{% block title %}Chat{% endblock %}
-
-{% block content %}
-<div class="max-w-min mx-auto">
-<p>Question:</p>
-<textarea class="text-black w-96 h-16 block" type="text" id="question"></textarea>
-<button class="float-right p-2 mt-2 bg-green-700 rounded-sm" onclick="query()">Submit</button>
-<p class="mt-12">Answer:</p>
-<textarea class="text-black w-96 h-16" id="answer" readonly></textarea>
+{% extends 'base.html' %} {% block title %}Chat{% endblock %} {% set
+no_container=True %} {% block content %}
+<div class="w-1/2 mx-auto">
+  <div id="loader" class="mt-5 text-center">
+    <div class="flex items-center justify-center">
+      <svg
+        class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          class="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          stroke-width="4"
+        ></circle>
+        <path
+          class="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+        ></path>
+      </svg>
+      <h1 class="text-2xl">Your document is being prepared</h1>
+    </div>
+    <h2 id="progress" class="text-lg mt-2"></h2>
+  </div>
+  <div id="qa-component" class="hidden">
+    <div id="chat-history" class="overflow-auto mb-64"></div>
+    <div
+      class="bg-midnight fixed bottom-0 left-0 p-8 border-t border-white w-screen"
+    >
+      <div class="mx-auto w-1/2">
+        <p>Question:</p>
+        <textarea
+          class="text-black rounded w-full h-24 p-2 block"
+          type="text"
+          id="question"
+          onkeypress="if(window.event.keyCode==13){query();return false;}"
+        ></textarea>
+        <button
+          class="float-right p-2 mt-2 bg-green-800 rounded-sm"
+          onclick="query()"
+        >
+          Submit
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block script %}
+{% endblock %} {% block script %}
 <script>
-    let file_id = '{{file_id}}'
-    question_elm = document.getElementById('question')
-    answer_elm = document.getElementById('answer')
-    function query(){
-        answer_elm.innerText = 'Loading...'
-        question = question_elm.value
-        fetch('/api/query', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({'question':question, 'file_id':file_id})}).then(res=>res.json()).then(res=>answer_elm.innerText=res.answer)
-    }
+  let id = "{{id}}";
+  let question_elm = document.getElementById("question");
+  let chat_history_elm = document.getElementById("chat-history");
+  let loader_elm = document.getElementById("loader");
+  let progress_elm = document.getElementById("progress");
+  let qa_elm = document.getElementById("qa-component");
+
+  function query() {
+    question = question_elm.value;
+    question_elm.value = "Loading...";
+    question_elm.disabled = true;
+    fetch("/api/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: question, id: id }),
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        question_elm.value = "";
+        question_elm.disabled = false;
+        chat_history_elm.innerHTML += `<div class="border-white border-b py-4">
+          <p>Q: <span>${question}</span></p>
+          <p>
+            A:
+            <span
+              >${res.answer}</span
+            >
+          </p>
+          <p
+            class="underline hover:cursor-pointer mt-4 mb-2"
+            onclick="this.nextElementSibling.classList.toggle('hidden');"
+          >
+            Show context
+          </p>
+          <p class="hidden">
+            ${res.context}
+          </p>
+        </div>`;
+      });
+  }
+  function get_status() {
+    fetch(`/api/status/${id}`)
+      .then((res) => res.json())
+      .then((res) => {
+        if (!res.is_ready) {
+          if (res.progress) {
+            progress_elm.innerText = res.progress;
+          }
+          setTimeout(get_status, 5000);
+        } else {
+          loader_elm.classList.toggle("hidden");
+          qa_elm.classList.toggle("hidden");
+        }
+      });
+  }
+  get_status();
 </script>
 {% endblock %}
