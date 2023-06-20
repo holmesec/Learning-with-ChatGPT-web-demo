@@ -4,7 +4,7 @@ import pickle
 import pypdfium2 as pdfium
 from sentence_transformers import SentenceTransformer
 embedding_model = SentenceTransformer(
-    'sentence-transformers/multi-qa-mpnet-base-dot-v1')
+    'sentence-transformers/multi-qa-distilbert-cos-v1')
 
 UPLOAD_FOLDER = 'chatta/uploads'
 

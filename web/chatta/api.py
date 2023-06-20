@@ -11,7 +11,7 @@ from chatta.ab_test.utils import get_ab_df, saves_ab_len_folder, saves_ab_ctx_24
 from chatta.utils import get_progress
 from sentence_transformers import SentenceTransformer
 embedding_model = SentenceTransformer(
-    'sentence-transformers/multi-qa-mpnet-base-dot-v1')
+    'sentence-transformers/multi-qa-distilbert-cos-v1')
 load_dotenv()
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -63,10 +63,12 @@ def query():
         context_to_embedding = pickle.loads(f.read())
 
     best_context = next(iter(context_to_embedding))
-    best_score = np.dot(embedded_question, context_to_embedding[best_context])
+    best_score = np.dot(embedded_question, context_to_embedding[best_context])/(
+        np.linalg.norm(embedded_question)*np.linalg.norm(context_to_embedding[best_context]))
 
     for c, e in context_to_embedding.items():
-        score = np.dot(embedded_question, e)
+        score = np.dot(embedded_question, e) / \
+            (np.linalg.norm(embedded_question)*np.linalg.norm(e))
         if score > best_score:
             best_context = c
             best_score = score
