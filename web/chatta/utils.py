@@ -13,8 +13,6 @@ id_to_progress = {}
 
 
 def get_progress(id):
-    # print(id)
-    # print(id_to_progress[id])
     return id_to_progress.get(id)
 
 
