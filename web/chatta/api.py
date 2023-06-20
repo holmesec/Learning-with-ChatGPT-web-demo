@@ -11,7 +11,7 @@ from chatta.ab_test.utils import get_ab_df, saves_ab_len_folder, saves_ab_ctx_24
 from chatta.utils import get_progress
 from sentence_transformers import SentenceTransformer
 embedding_model = SentenceTransformer(
-    'sentence-transformers/multi-qa-distilbert-cos-v1')
+    'sentence-transformers/multi-qa-MiniLM-L6-cos-v1')
 load_dotenv()
 
 bp = Blueprint('api', __name__, url_prefix='/api')
